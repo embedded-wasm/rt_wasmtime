@@ -1,32 +1,29 @@
 
-use wasm_embedded_spec::{self as spec};
 
-use spec::gpio::Gpio;
-use spec::api::{types, UserErrorConversion};
+use wasm_embedded_spec::{Error, gpio::Gpio, api::types};
 
 use embedded_hal::digital::{PinState};
 
-use super::{Driver, Context};
-use wasmtime::*;
+use super::{Engine, Context};
 
 /// Wrapper for wiggle-generated GPIO api
-impl <D: Driver> spec::api::gpio::Gpio for Context<D> {
+impl <E: Engine> wasm_embedded_spec::api::gpio::Gpio for Context<E> {
     /// Initialise the provided GPIO pin in input or output mode
-    fn init(&mut self, port: u32, pin: u32, mode: types::Mode) -> Result<i32, spec::Error> {
+    fn init(&mut self, port: u32, pin: u32, mode: types::Mode) -> Result<i32, Error> {
         log::debug!("GPIO init port: {} pin: {} mode: {:?}", port, pin, mode);
 
-        Gpio::init(&mut self.driver, port, pin, mode == types::Mode::Output)
+        Gpio::init(&mut self.engine, port, pin, mode == types::Mode::Output)
     }
 
     /// Deinitialise the specified GPIO pin
-    fn deinit(&mut self, dev: i32) -> Result<(), spec::Error> {
+    fn deinit(&mut self, dev: i32) -> Result<(), Error> {
         log::debug!("GPIO deinit handle: {}", dev);
 
-        Gpio::deinit(&mut self.driver, dev)
+        Gpio::deinit(&mut self.engine, dev)
     }
 
     /// Write to a GPIO pin
-    fn set(&mut self, dev: i32, value: types::Value) -> Result<(), spec::Error> {
+    fn set(&mut self, dev: i32, value: types::Value) -> Result<(), Error> {
         log::debug!("GPIO write handle: {} val: {:?}", dev, value);
 
         let state = match value {
@@ -34,14 +31,14 @@ impl <D: Driver> spec::api::gpio::Gpio for Context<D> {
             types::Value::Low => PinState::Low,
         };
 
-        Gpio::set(&mut self.driver, dev, state)
+        Gpio::set(&mut self.engine, dev, state)
     }
 
     // Read from a GPIO pin
-    fn get(&mut self, dev: i32) -> Result<types::Value, spec::Error> {
+    fn get(&mut self, dev: i32) -> Result<types::Value, Error> {
         log::debug!("GPIO read handle: {}", dev);
 
-        let r = Gpio::get(&mut self.driver, dev)?;
+        let r = Gpio::get(&mut self.engine, dev)?;
 
         match r {
             PinState::High => Ok(types::Value::High),

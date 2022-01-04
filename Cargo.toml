@@ -15,17 +15,18 @@ std = []
 default = [ "std" ]
 
 [dependencies]
-log = { version = "*", default_features = false }
+log = { version = "0.4.14", default_features = false }
 embedded-hal = "1.0.0-alpha.5"
+anyhow = "1.0.52"
 
 wiggle = { version = "0.32.0" }
 wasmtime = { version = "0.32.0" }
 wasmtime-wasi = { version = "0.32.0" }
-anyhow = "1.0.52"
 
 [dependencies.wasm-embedded-spec]
-version = "0.2.1"
+version = "0.2.4"
 default_features = false
 features = [ "std", "bind_rs" ]
-path = "../spec"
 
+[patch.crates-io]
+#wasm-embedded-spec = { path = "../spec" }

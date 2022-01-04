@@ -1,18 +1,12 @@
 use std::ops::{Deref, DerefMut};
 
-use wasm_embedded_spec::{self as spec};
+use wasm_embedded_spec::{Error, spi::Spi, api::types};
 
-use spec::Error;
-use spec::api::{types, UserErrorConversion};
+use super::{Context, Engine};
 
-use embedded_hal::digital::{PinState};
-
-use super::Context;
-
-use wasmtime::*;
 use wiggle::GuestPtr;
 
-impl spec::api::spi::Spi for Context {
+impl <E: Engine> wasm_embedded_spec::api::spi::Spi for Context<E> {
     fn init(
         &mut self,
         dev: u32,
@@ -31,24 +25,14 @@ impl spec::api::spi::Spi for Context {
             sck,
             cs
         );
-        
-        let spi = match self.spi.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
 
-        spi.init(dev, baud, mosi, miso, sck, cs)
+        Spi::init(&mut self.engine, dev, baud, mosi, miso, sck, cs)
     }
 
     fn deinit(&mut self, handle: i32) -> Result<(), Error> {
         log::debug!("Closing SPI handle: {}", handle);
 
-        let spi = match self.spi.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        spi.deinit(handle)
+        Spi::deinit(&mut self.engine, handle)
     }
 
     fn write<'a>(&mut self, handle: i32, data: &types::Wbytes<'a>) -> Result<(), Error> {
@@ -57,12 +41,7 @@ impl spec::api::spi::Spi for Context {
 
         log::debug!("Write SPI {} data: {:02x?}", handle, d1.deref());
 
-        let spi = match self.spi.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        spi.write(handle, d1.deref())
+        Spi::write(&mut self.engine, handle, d1.deref())
     }
 
     fn transfer<'a>(&mut self, handle: i32, data: &types::Rbytes<'a>) -> Result<(), Error> {
@@ -71,12 +50,7 @@ impl spec::api::spi::Spi for Context {
 
         log::debug!("Transfer SPI {} data: {:02x?}", handle, d1.deref());
 
-        let spi = match self.spi.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        spi.transfer(handle, d1.deref_mut())
+        Spi::transfer(&mut self.engine, handle, d1.deref_mut())
     }
 
     fn exec<'a>(&mut self, _handle: i32, ops: &GuestPtr<'a, [types::Op]>) -> Result<(), Error> {

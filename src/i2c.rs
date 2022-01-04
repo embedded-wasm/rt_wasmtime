@@ -1,14 +1,11 @@
 use std::ops::{Deref, DerefMut};
-use wasm_embedded_spec::{self as spec};
 
-use spec::Error;
-use spec::api::{types, UserErrorConversion};
-use embedded_hal::digital::{PinState};
+use wasm_embedded_spec::{Error, i2c::I2c, api::types};
 
-use super::Context;
-use wasmtime::*;
+use super::{Context, Engine};
 
-impl spec::api::i2c::I2c for Context {
+/// Wrapper for wiggle-generated I2C api
+impl <E: Engine> wasm_embedded_spec::api::i2c::I2c for Context<E> {
     fn init(&mut self, port: u32, baud: u32, sda: i32, scl: i32) -> Result<i32, Error> {
         log::debug!(
             "Opening I2C port: {} (baud: {} sda: {} scl: {})",
@@ -17,24 +14,14 @@ impl spec::api::i2c::I2c for Context {
             sda,
             scl
         );
-        
-        let i2c = match self.i2c.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
 
-        i2c.init(port, baud, sda, scl)
+        I2c::init(&mut self.engine, port, baud, sda, scl)
     }
 
     fn deinit(&mut self, handle: i32) -> Result<(), Error> {
         log::debug!("Closing I2C handle: {}", handle);
 
-        let i2c = match self.i2c.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        i2c.deinit(handle)
+        I2c::deinit(&mut self.engine, handle)
     }
 
     /// Write to an I2c device
@@ -49,12 +36,7 @@ impl spec::api::i2c::I2c for Context {
             d1.deref()
         );
 
-        let i2c = match self.i2c.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        i2c.write(handle, addr, d1.deref())
+        I2c::write(&mut self.engine, handle, addr, d1.deref())
     }
 
     /// Read from an I2c device
@@ -64,12 +46,7 @@ impl spec::api::i2c::I2c for Context {
 
         log::debug!("I2C read handle: {} addr: {}", handle, addr);
 
-        let i2c = match self.i2c.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        i2c.read(handle, addr, b1.deref_mut())
+        I2c::read(&mut self.engine, handle, addr, b1.deref_mut())
     }
 
     /// Write to and read from an I2c device on the specified peripheral
@@ -93,11 +70,6 @@ impl spec::api::i2c::I2c for Context {
             d1.deref()
         );
 
-        let i2c = match self.i2c.as_deref_mut() {
-            Some(d) => d,
-            None => return Err(spec::Error::Unsupported),
-        };
-
-        i2c.write_read(handle, addr, d1.deref(), b1.deref_mut())
+        I2c::write_read(&mut self.engine, handle, addr, d1.deref(), b1.deref_mut())
     }
 }
