@@ -24,7 +24,7 @@ wasmtime = { version = "0.32.0" }
 wasmtime-wasi = { version = "0.32.0" }
 
 [dependencies.wasm-embedded-spec]
-version = "0.2.4"
+version = "0.3.0"
 default_features = false
 features = [ "std", "bind_rs" ]
 
