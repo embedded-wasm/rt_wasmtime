@@ -19,9 +19,9 @@ log = { version = "0.4.14", default_features = false }
 embedded-hal = "1.0.0-alpha.5"
 anyhow = "1.0.52"
 
-wiggle = { version = "0.32.0" }
-wasmtime = { version = "0.32.0" }
-wasmtime-wasi = { version = "0.32.0" }
+wiggle = { version = "3.0.0" }
+wasmtime = { version = "3.0.0" }
+wasmtime-wasi = { version = "3.0.0" }
 
 [dependencies.wasm-embedded-spec]
 version = "0.3.0"

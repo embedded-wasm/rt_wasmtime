@@ -48,7 +48,7 @@ impl <E: Engine> Context<E> {
 }
 
 impl <E: Engine> UserErrorConversion for Context<E> {
-    fn errno_from_error(&mut self, e: spec::Error) -> Result<spec::api::types::Errno, wiggle::Trap> {
+    fn errno_from_error(&mut self, e: spec::Error) -> Result<spec::api::types::Errno, anyhow::Error> {
         match e {
             Error::InvalidArg => Ok(Errno::InvalidArg),
             Error::Unexpected => Ok(Errno::Unexpected),
