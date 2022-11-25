@@ -27,6 +27,3 @@ wasmtime-wasi = { version = "3.0.0" }
 version = "0.3.0"
 default_features = false
 features = [ "std", "bind_rs" ]
-
-[patch.crates-io]
-#wasm-embedded-spec = { path = "../spec" }
