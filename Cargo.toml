@@ -6,7 +6,7 @@ authors = [
   "Ryan Kurte <ryan@kurte.nz>"
 ]
 license = "MPL-2.0"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 
 [features]
@@ -16,7 +16,7 @@ default = [ "std" ]
 
 [dependencies]
 log = { version = "0.4.14", default_features = false }
-embedded-hal = "1.0.0-alpha.5"
+embedded-hal = "1.0.0-alpha.8"
 anyhow = "1.0.52"
 
 wiggle = { version = "3.0.0" }
@@ -24,6 +24,6 @@ wasmtime = { version = "3.0.0" }
 wasmtime-wasi = { version = "3.0.0" }
 
 [dependencies.wasm-embedded-spec]
-version = "0.3.0"
+version = "0.4.0"
 default_features = false
 features = [ "std", "bind_rs" ]

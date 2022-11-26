@@ -35,22 +35,43 @@ impl <E: Engine> wasm_embedded_spec::api::spi::Spi for Context<E> {
         Spi::deinit(&mut self.engine, handle)
     }
 
+    fn read<'a>(&mut self, handle: i32, data: &types::Rbytes<'a>) -> Result<(), Error> {
+        let d = data.ptr.as_array(data.len);
+        let mut d1 = d.as_slice_mut().unwrap();
+
+        log::debug!("SPI Read {}", handle);
+
+        Spi::read(&mut self.engine, handle, d1.deref_mut())
+    }
+
     fn write<'a>(&mut self, handle: i32, data: &types::Wbytes<'a>) -> Result<(), Error> {
         let d = data.ptr.as_array(data.len);
         let d1 = d.as_slice().unwrap();
 
-        log::debug!("Write SPI {} data: {:02x?}", handle, d1.deref());
+        log::debug!("SPI Write {} data: {:02x?}", handle, d1.deref());
 
         Spi::write(&mut self.engine, handle, d1.deref())
     }
 
-    fn transfer<'a>(&mut self, handle: i32, data: &types::Rbytes<'a>) -> Result<(), Error> {
+    fn transfer<'a>(&mut self, handle: i32, read: &types::Rbytes<'a>, write: &types::Wbytes<'a>) -> Result<(), Error> {
+        let r = read.ptr.as_array(read.len);
+        let mut r1 = r.as_slice_mut().unwrap();
+
+        let w = write.ptr.as_array(write.len);
+        let w1 = w.as_slice().unwrap();
+
+        log::debug!("SPI Transfer {} data: {:02x?}", handle, w1.deref());
+
+        Spi::transfer(&mut self.engine, handle, r1.deref_mut(), w1.deref())
+    }
+
+    fn transfer_inplace<'a>(&mut self, handle: i32, data: &types::Rbytes<'a>) -> Result<(), Error> {
         let d = data.ptr.as_array(data.len);
         let mut d1 = d.as_slice_mut().unwrap();
 
-        log::debug!("Transfer SPI {} data: {:02x?}", handle, d1.deref());
+        log::debug!("SPI TransferInplace {} data: {:02x?}", handle, d1.deref());
 
-        Spi::transfer(&mut self.engine, handle, d1.deref_mut())
+        Spi::transfer_inplace(&mut self.engine, handle, d1.deref_mut())
     }
 
     fn exec<'a>(&mut self, _handle: i32, ops: &GuestPtr<'a, [types::Op]>) -> Result<(), Error> {

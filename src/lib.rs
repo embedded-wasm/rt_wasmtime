@@ -13,6 +13,7 @@ use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 mod gpio;
 mod spi;
 mod i2c;
+mod uart;
 
 /// Wasmtime runtime object
 pub struct WasmtimeRuntime<E> {
@@ -26,12 +27,13 @@ struct Context<E> {
     engine: E,
 }
 
-pub trait Engine: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi {}
+pub trait Engine: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi + spec::uart::Uart {}
 
 impl <T> Engine for T where
-    T: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi ,
+    T: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi + spec::uart::Uart,
 {
 }
+
 impl <E: Engine> Context<E> {
     pub fn new(engine: E) -> Self {
 
@@ -77,6 +79,7 @@ impl <E: Engine + 'static> WasmtimeRuntime<E> {
         spec::api::gpio::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
         spec::api::spi::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
         spec::api::i2c::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
+        spec::api::uart::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
 
         // Load module from file
         let module = Module::from_binary(&wasm_engine, bin)?;
