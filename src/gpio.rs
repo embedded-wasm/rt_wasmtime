@@ -9,7 +9,7 @@ use super::{Engine, Context};
 /// Wrapper for wiggle-generated GPIO api
 impl <E: Engine> wasm_embedded_spec::api::gpio::Gpio for Context<E> {
     /// Initialise the provided GPIO pin in input or output mode
-    fn init(&mut self, port: u32, pin: u32, mode: types::Mode) -> Result<i32, Error> {
+    fn init(&mut self, port: i32, pin: i32, mode: types::Mode) -> Result<i32, Error> {
         log::debug!("GPIO init port: {} pin: {} mode: {:?}", port, pin, mode);
 
         Gpio::init(&mut self.engine, port, pin, mode == types::Mode::Output)
