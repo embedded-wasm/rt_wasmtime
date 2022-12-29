@@ -9,7 +9,7 @@ use spec::api::{UserErrorConversion, types::Errno};
 use wasmtime::*;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 
-
+mod core;
 mod gpio;
 mod spi;
 mod i2c;
