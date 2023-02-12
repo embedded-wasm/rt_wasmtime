@@ -1,19 +1,17 @@
-/// Wasmtime runtime support
-
+//! Wasmtime embedded wasm runtime support
 
 pub use wasm_embedded_spec::{self as spec};
 
-use spec::Error;
-use spec::api::{UserErrorConversion, types::Errno};
+use spec::{
+    Engine,
+    wiggle::api,
+};
 
 use wasmtime::*;
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 
 
-mod gpio;
-mod spi;
-mod i2c;
-mod uart;
+//mod error;
 
 /// Wasmtime runtime object
 pub struct WasmtimeRuntime<E> {
@@ -25,13 +23,6 @@ pub struct WasmtimeRuntime<E> {
 struct Context<E> {
     wasi: WasiCtx,
     engine: E,
-}
-
-pub trait Engine: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi + spec::uart::Uart {}
-
-impl <T> Engine for T where
-    T: spec::gpio::Gpio + spec::i2c::I2c + spec::spi::Spi + spec::uart::Uart,
-{
 }
 
 impl <E: Engine> Context<E> {
@@ -49,37 +40,34 @@ impl <E: Engine> Context<E> {
     }
 }
 
-impl <E: Engine> UserErrorConversion for Context<E> {
-    fn errno_from_error(&mut self, e: spec::Error) -> Result<spec::api::types::Errno, anyhow::Error> {
-        match e {
-            Error::InvalidArg => Ok(Errno::InvalidArg),
-            Error::Unexpected => Ok(Errno::Unexpected),
-            Error::Failed => Ok(Errno::Failed),
-            Error::NoDevice => Ok(Errno::NoDevice),
-            Error::Unsupported => Ok(Errno::Unsupported),
-        }
-    }
-}
-
 impl <E: Engine + 'static> WasmtimeRuntime<E> {
     /// Create a new WasmtimeRuntime with the provided engine and application
-    pub fn new(engine: E, bin: &[u8]) -> anyhow::Result<Self> {
+    pub fn new(mut engine: E, bin: &[u8]) -> anyhow::Result<Self> {
         // Create new linker with the provided engine
         let wasm_engine = wasmtime::Engine::default();
         let mut linker = Linker::new(&wasm_engine);
 
-        // Setup store and context
-        let context = Context::new(engine);
-        let mut store = Store::new(&wasm_engine, context);
-
         // Bind WASI
+        // TODO: make WASI an optional feature?
         wasmtime_wasi::add_to_linker(&mut linker, |ctx: &mut Context<E>| &mut ctx.wasi )?;
 
         // Bind drivers
-        spec::api::gpio::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
-        spec::api::spi::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
-        spec::api::i2c::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
-        spec::api::uart::add_to_linker(&mut linker, move |c: &mut Context<E>| c)?;
+        if engine.gpio().is_some() {
+            api::gpio::add_to_linker(&mut linker, move |c: &mut Context<E>| c.engine.gpio().unwrap() )?;
+        }
+        if engine.spi().is_some() {
+            api::spi::add_to_linker(&mut linker, move |c: &mut Context<E>| c.engine.spi().unwrap() )?;
+        }
+        if engine.i2c().is_some() {
+            api::i2c::add_to_linker(&mut linker, move |c: &mut Context<E>| c.engine.i2c().unwrap() )?;
+        }
+        if engine.uart().is_some() {
+            api::uart::add_to_linker(&mut linker, move |c: &mut Context<E>| c.engine.uart().unwrap() )?;
+        }
+        
+        // Setup store and context
+        let context = Context::new(engine);
+        let mut store = Store::new(&wasm_engine, context);
 
         // Load module from file
         let module = Module::from_binary(&wasm_engine, bin)?;
@@ -94,7 +82,7 @@ impl <E: Engine + 'static> WasmtimeRuntime<E> {
 
         linker
             .get_default(&mut self.store, "")?
-            .typed::<(), (), _>(&self.store)?
+            .typed::<(), _>(&self.store)?
             .call(&mut self.store, ())?;
 
         Ok(())
